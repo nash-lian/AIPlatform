@@ -491,6 +491,8 @@ CREATE TABLE [dbo].[WebhookWebhookParameters](
 CREATE TABLE [dbo].[AMLWorkspaces](
 	[Id] [bigint] IDENTITY(1,1) NOT NULL,
 	[WorkspaceName] [nvarchar](50) NOT NULL,
+	[Region] [nvarchar](max) NOT NULL,
+	[SubcriptionId] [nvarchar](max) NOT NULL,
 	[ResourceId] [nvarchar](max) NOT NULL,
 	[AADApplicationId] [uniqueidentifier] NOT NULL,
 	[AADTenantId] [uniqueidentifier] NULL, -- allow null for backward compatibility
@@ -539,7 +541,7 @@ CREATE TABLE [dbo].[APIVersions](
 	[LastUpdatedTime] [datetime2](7) NOT NULL,
 	PRIMARY KEY (Id),
 	CONSTRAINT FK_deploymentId_APIVersions FOREIGN KEY (DeploymentId) REFERENCES Deployments(Id),
-	-- CONSTRAINT FK_amlworkspaceId_APIVersions FOREIGN KEY (AMLWorkspaceId) REFERENCES AMLWorkspaces(Id)
+	CONSTRAINT FK_amlworkspaceId_APIVersions FOREIGN KEY (AMLWorkspaceId) REFERENCES AMLWorkspaces(Id)
 ) ON [PRIMARY]
 GO
 

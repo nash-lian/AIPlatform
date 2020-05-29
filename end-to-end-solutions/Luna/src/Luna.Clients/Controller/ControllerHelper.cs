@@ -38,6 +38,35 @@ namespace Luna.Clients.Controller
             return "a" + Guid.NewGuid().ToString("N").Substring(1);
         }
 
+        public static async Task<TrainModelResponse> TrainModel(APIVersion version, AMLWorkspace workspace, IDictionary<string, object> input)
+        {
+            var requestUri = new Uri(version.BatchInferenceAPI);
+            var request = new HttpRequestMessage { RequestUri = requestUri, Method = HttpMethod.Post };
+
+            var token = await ControllerAuthHelper.GetToken(workspace.AADTenantId.ToString(), workspace.AADApplicationId.ToString(), workspace.AADApplicationSecrets);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var modelId = GetLunaGeneratedUuid();
+            var body = new Models.Controller.Backend.TrainModelRequest();
+            body.ExperimentName = modelId;
+            var parameterAssignment = new Dictionary<string, object>() { };
+            parameterAssignment["modelId"] = modelId;
+            parameterAssignment.Union(input);
+            body.ParameterAssignment = parameterAssignment;
+
+            request.Content = new StringContent(JsonConvert.SerializeObject(body));
+            request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+            var response = await HttpClient.SendAsync(request);
+
+            string responseContent = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new LunaServerException($"Query failed with response {responseContent}");
+            }
+            return new TrainModelResponse { modelId = modelId };
+        }
+
         public static async Task<BatchInferenceResponse> BatchInference(APIVersion version, AMLWorkspace workspace, IDictionary<string, object> input)
         {
             var requestUri = new Uri(version.BatchInferenceAPI);

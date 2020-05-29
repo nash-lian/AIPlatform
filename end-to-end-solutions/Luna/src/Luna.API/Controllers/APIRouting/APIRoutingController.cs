@@ -71,6 +71,8 @@ namespace Luna.API.Controllers.Admin
             return this.Content((await ControllerHelper.Predict(version, workspace, request.input)), "application/json");
         }
 
+
+
         /// <summary>
         /// Gets all apiVersions within a deployment within an product.
         /// </summary>
@@ -93,6 +95,30 @@ namespace Luna.API.Controllers.Admin
             var workspace = await _amlWorkspaceService.GetAsync(version.AMLWorkspaceName);
 
             return Ok(await ControllerHelper.BatchInference(version, workspace, request.input));
+        }
+
+        /// <summary>
+        /// Gets all apiVersions within a deployment within an product.
+        /// </summary>
+        /// <param name="productName">The name of the product.</param>
+        /// <param name="deploymentName">The name of the deployment.</param>
+        /// <returns>HTTP 200 OK with apiVersion JSON objects in response body.</returns>
+        [HttpPost("products/{productName}/deployments/{deploymentName}/train")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult> TrainModel(string productName, string deploymentName, [FromQuery(Name = "api-version")] string versionName, [FromBody] TrainModelRequest request)
+        {
+            var apiSubcription = await _apiSubscriptionService.GetAsync(request.subscriptionId);
+            if (apiSubcription == null)
+            {
+                throw new LunaBadRequestUserException(LoggingUtils.ComposePayloadNotProvidedErrorMessage(nameof(apiSubcription)), UserErrorCode.PayloadNotProvided);
+            }
+            if (request.userId != _userAPIM.GetUserName(apiSubcription.UserId))
+                throw new LunaBadRequestUserException("UserId of request is not equal to apiSubscription.", UserErrorCode.InvalidParameter);
+
+            var version = await _apiVersionService.GetAsync(productName, deploymentName, versionName);
+            var workspace = await _amlWorkspaceService.GetAsync(version.AMLWorkspaceName);
+
+            return Ok(await ControllerHelper.TrainModel(version, workspace, request.input));
         }
     }
 }
